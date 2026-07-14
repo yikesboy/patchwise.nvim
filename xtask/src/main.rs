@@ -35,9 +35,60 @@ fn run() -> Result<()> {
     match command.to_str() {
         Some("testvim") => run_testvim(neovim_args),
         Some("health") => run_health(),
+        Some("clean") => run_clean(),
         Some(unknown) => bail!("unknown xtask command: {unknown}"),
         None => bail!("command contains invalid UTF-8"),
     }
+}
+
+fn run_clean() -> Result<()> {
+    let root = project_root()?;
+
+    let test_vim = &root.join(".testvim");
+    let result = &root.join("result");
+
+    remove_if_exists(test_vim)?;
+    remove_if_exists(result)?;
+
+    let entries =
+        fs::read_dir(&root).with_context(|| format!("failed to read {}", root.display()))?;
+
+    for entry in entries {
+        let path = entry?.path();
+
+        let is_result_link = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with("result-"));
+
+        if is_result_link {
+            remove_if_exists(&path)?;
+        }
+    }
+
+    println!("removed patchwise development artifacts");
+
+    Ok(())
+}
+
+fn remove_if_exists(path: &Path) -> Result<()> {
+    let metadata = match fs::symlink_metadata(path) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(());
+        }
+        Err(error) => {
+            return Err(error).with_context(|| format!("failed to inspect {}", path.display()));
+        }
+    };
+
+    if metadata.file_type().is_dir() {
+        fs::remove_dir_all(path).with_context(|| format!("failed to remove {}", path.display()))?;
+    } else {
+        fs::remove_file(path).with_context(|| format!("failed to remove {}", path.display()))?;
+    }
+
+    Ok(())
 }
 
 fn run_testvim(neovim_args: Vec<OsString>) -> Result<()> {

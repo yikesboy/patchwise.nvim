@@ -1,7 +1,9 @@
 # patchwise.nvim
+
 a rust native neovim plugin to use llms in a reasonable way and to prevent slop from entering your repo
 
 ## development
+
 enter the development requirement
 
 `nix develop`
@@ -16,17 +18,18 @@ build the plugin and launch a clean and isolated neovim instance
 
 open a file with the test instance
 
-`cargo xtask testvim path/to/file
+`cargo xtask testvim path/to/file`
 
 pass arbitrary neovim arguments to the test instance
 
-`cargo xtask testvim --<argument>
+`cargo xtask testvim --<argument>`
 
 cleanup testvim build artifcats
 
 `cargo xtask clean`
 
 ## useful rust commands
+
 check compilation
 
 `cargo check`
@@ -44,6 +47,7 @@ format
 `cargo format`
 
 ## useful nix commands
+
 format nix files
 
 `nix fmt`
@@ -61,6 +65,7 @@ update flake inputs
 `nix flake update`
 
 ## useful neovim commands
-check if plugin is loaded 
+
+check if plugin is loaded
 
 `:lua print(package.loaded.patchwise ~= nil)`

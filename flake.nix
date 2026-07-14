@@ -1,15 +1,29 @@
 {
-  description = "A very basic flake";
+  description = "Patchwise Neovim plugin development shell";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
   };
 
-  outputs = { self, nixpkgs }: {
+  outputs =
+    { nixpkgs, ... }:
+    let
+      system = "x86_64-linux";
+      pkgs = nixpkgs.legacyPackages.${system};
+    in
+    {
+      devShells.${system}.default = pkgs.mkShell {
+        packages = with pkgs; [
+          rustc
+          cargo
+          rustfmt
+          clippy
 
-    packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
+          lua
+          lua-language-server
+        ];
+      };
 
-    packages.x86_64-linux.default = self.packages.x86_64-linux.hello;
-
-  };
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
+    };
 }

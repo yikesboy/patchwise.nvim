@@ -1,13 +1,17 @@
-use api::types::LogLevel;
-use nvim_oxi as oxi;
-use oxi::{Dictionary, api};
+mod commands;
+mod error;
+mod notify;
 
-const PLUGIN_LOGLEVEL: LogLevel = LogLevel::Info;
+use nvim_oxi::{self as oxi};
+use oxi::Dictionary;
 
 #[oxi::plugin]
 fn patchwise() -> Dictionary {
-    api::notify("Patchwise loaded", PLUGIN_LOGLEVEL, &Default::default())
-        .expect("failed to send notification");
+    notify::info("Patchwise loaded");
+
+    if let Err(error) = commands::register_all() {
+        notify::error(&format!("Patchwise initialization failed: {error}"));
+    };
 
     Dictionary::new()
 }

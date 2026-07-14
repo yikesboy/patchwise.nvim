@@ -1,10 +1,14 @@
 [package]
-name = "patchwise-nvim"
+name = "patchwise"
 version = "0.1.0"
 edition = "2024"
 
 [workspace]
 members = [".", "xtask"]
 resolver = "2"
+
+# build a native shared library that neovim can load with 'require'
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]

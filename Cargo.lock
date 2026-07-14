@@ -78,6 +78,7 @@ name = "patchwise"
 version = "0.1.0"
 dependencies = [
  "nvim-oxi",
+ "thiserror",
 ]
 
 [[package]]

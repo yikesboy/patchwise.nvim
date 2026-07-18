@@ -1,4 +1,5 @@
 mod health;
+mod selection;
 
 use crate::{
     error::{PatchwiseError, Result},
@@ -7,7 +8,11 @@ use crate::{
 
 use nvim_oxi::{
     Function,
-    api::{self, types::CommandArgs},
+    api::{
+        self,
+        opts::CreateCommandOpts,
+        types::{CommandArgs, CommandRange},
+    },
 };
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -16,18 +21,30 @@ type Handler = fn(CommandArgs) -> Result<()>;
 #[derive(Debug, Clone, Copy, EnumIter)]
 enum Command {
     Health,
+    Selection,
 }
 
 impl Command {
     const fn name(self) -> &'static str {
         match self {
             Self::Health => "PatchwiseHealth",
+            Self::Selection => "PatchwiseSelection",
         }
     }
 
     const fn handler(self) -> Handler {
         match self {
             Self::Health => health::run,
+            Self::Selection => selection::run,
+        }
+    }
+
+    fn options(self) -> CreateCommandOpts {
+        match self {
+            Self::Health => CreateCommandOpts::default(),
+            Self::Selection => CreateCommandOpts::builder()
+                .range(CommandRange::CurrentLine)
+                .build(),
         }
     }
 
@@ -41,14 +58,17 @@ impl Command {
             }
         });
 
-        Self::create_oxi_user_command(name, callback)
+        let opts = self.options();
+
+        Self::create_oxi_user_command(name, callback, opts)
     }
 
     fn create_oxi_user_command(
         name: &'static str,
         callback: Function<CommandArgs, ()>,
+        options: CreateCommandOpts,
     ) -> Result<()> {
-        api::create_user_command(name, callback, &Default::default())
+        api::create_user_command(name, callback, &options)
             .map_err(|source| PatchwiseError::CommandRegistration { name, source })
     }
 }

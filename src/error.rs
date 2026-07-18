@@ -15,6 +15,12 @@ pub enum PatchwiseError {
         #[source]
         source: nvim_oxi::api::Error,
     },
+
+    #[error("Failed to read selection from current buffer")]
+    SelectionRead(#[source] nvim_oxi::api::Error),
+
+    #[error("No selection in current buffer")]
+    NoSelection,
 }
 
 pub type Result<T> = std::result::Result<T, PatchwiseError>;

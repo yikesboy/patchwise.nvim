@@ -1,4 +1,8 @@
+use std::path::PathBuf;
+
+use nvim_oxi::api;
 use nvim_oxi::api::Buffer;
+use nvim_oxi::api::opts::OptionOpts;
 
 use crate::error::PatchwiseError;
 use crate::error::Result;
@@ -61,5 +65,26 @@ impl PatchwiseBuffer {
             .map(|line| line.to_string())
             .collect::<Vec<_>>()
             .join("\n"))
+    }
+
+    pub fn text(&self) -> Result<String> {
+        let lines = self
+            .inner
+            .get_lines(.., false)
+            .map_err(PatchwiseError::BufferRead)?;
+
+        Ok(lines
+            .map(|line| line.to_string())
+            .collect::<Vec<String>>()
+            .join("\n"))
+    }
+
+    pub fn file_path(&self) -> Result<PathBuf> {
+        Ok(self.inner.get_name().map_err(PatchwiseError::BufferRead)?)
+    }
+
+    pub fn file_type(&self) -> Result<String> {
+        let opts = OptionOpts::builder().buffer(self.inner.clone()).build();
+        api::get_option_value("filetype", &opts).map_err(PatchwiseError::BufferRead)
     }
 }

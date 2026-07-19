@@ -1,4 +1,5 @@
 mod health;
+mod replace;
 mod selection;
 
 use crate::{
@@ -22,6 +23,7 @@ type Handler = fn(CommandArgs) -> Result<()>;
 enum Command {
     Health,
     Selection,
+    Replace,
 }
 
 impl Command {
@@ -29,6 +31,7 @@ impl Command {
         match self {
             Self::Health => "PatchwiseHealth",
             Self::Selection => "PatchwiseSelection",
+            Self::Replace => "PatchwiseReplace",
         }
     }
 
@@ -36,13 +39,14 @@ impl Command {
         match self {
             Self::Health => health::run,
             Self::Selection => selection::run,
+            Self::Replace => replace::run,
         }
     }
 
     fn options(self) -> CreateCommandOpts {
         match self {
             Self::Health => CreateCommandOpts::default(),
-            Self::Selection => CreateCommandOpts::builder()
+            Self::Selection | Self::Replace => CreateCommandOpts::builder()
                 .range(CommandRange::CurrentLine)
                 .build(),
         }

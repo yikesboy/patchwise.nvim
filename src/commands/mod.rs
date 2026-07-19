@@ -1,11 +1,10 @@
+mod edit;
 mod health;
 mod replace;
 mod selection;
 
-use crate::{
-    error::{PatchwiseError, Result},
-    notify,
-};
+use crate::error::{PatchwiseError, Result};
+use crate::nvim::notify;
 
 use nvim_oxi::{
     Function,
@@ -24,6 +23,7 @@ enum Command {
     Health,
     Selection,
     Replace,
+    Edit,
 }
 
 impl Command {
@@ -32,6 +32,7 @@ impl Command {
             Self::Health => "PatchwiseHealth",
             Self::Selection => "PatchwiseSelection",
             Self::Replace => "PatchwiseReplace",
+            Self::Edit => "PatchwiseEdit",
         }
     }
 
@@ -40,6 +41,7 @@ impl Command {
             Self::Health => health::run,
             Self::Selection => selection::run,
             Self::Replace => replace::run,
+            Self::Edit => edit::run,
         }
     }
 
@@ -47,6 +49,10 @@ impl Command {
         match self {
             Self::Health => CreateCommandOpts::default(),
             Self::Selection | Self::Replace => CreateCommandOpts::builder()
+                .range(CommandRange::CurrentLine)
+                .build(),
+            Self::Edit => CreateCommandOpts::builder()
+                .nargs(api::types::CommandNArgs::OneOrMore)
                 .range(CommandRange::CurrentLine)
                 .build(),
         }

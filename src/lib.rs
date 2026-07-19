@@ -1,6 +1,7 @@
 mod commands;
 mod error;
 mod notify;
+mod nvim;
 
 use nvim_oxi::{self as oxi};
 use oxi::Dictionary;

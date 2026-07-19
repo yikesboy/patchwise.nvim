@@ -21,6 +21,12 @@ pub enum PatchwiseError {
 
     #[error("No selection in current buffer")]
     NoSelection,
+
+    #[error("Failed to set text in buffer: {0}")]
+    BufferEdit(#[source] nvim_oxi::api::Error),
+
+    #[error("Invalid selection position at row {row}, column: {col}")]
+    InvalidSelectionPosition { row: usize, col: usize },
 }
 
 pub type Result<T> = std::result::Result<T, PatchwiseError>;

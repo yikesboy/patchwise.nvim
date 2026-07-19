@@ -2,10 +2,8 @@ mod health;
 mod replace;
 mod selection;
 
-use crate::{
-    error::{PatchwiseError, Result},
-    notify,
-};
+use crate::error::{PatchwiseError, Result};
+use crate::nvim::notify;
 
 use nvim_oxi::{
     Function,

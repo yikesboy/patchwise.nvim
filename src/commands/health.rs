@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use nvim_oxi::api::types::CommandArgs;
 
 use crate::error::{PatchwiseError, Result};
-use crate::notify;
+use crate::nvim::notify;
 
 pub fn run(_args: CommandArgs) -> Result<()> {
     let status = Command::new("codex")

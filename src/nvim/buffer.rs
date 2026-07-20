@@ -21,6 +21,20 @@ impl PatchwiseBuffer {
         }
     }
 
+    pub fn from_handle(handle: i32) -> Self {
+        Self {
+            inner: Buffer::from(handle),
+        }
+    }
+
+    pub fn handle(&self) -> i32 {
+        self.inner.handle()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.inner.is_valid()
+    }
+
     pub fn get_mark(&self, mark: char) -> Result<(usize, usize)> {
         self.inner
             .get_mark(mark)
@@ -80,7 +94,7 @@ impl PatchwiseBuffer {
     }
 
     pub fn file_path(&self) -> Result<PathBuf> {
-        Ok(self.inner.get_name().map_err(PatchwiseError::BufferRead)?)
+        self.inner.get_name().map_err(PatchwiseError::BufferRead)
     }
 
     pub fn file_type(&self) -> Result<String> {

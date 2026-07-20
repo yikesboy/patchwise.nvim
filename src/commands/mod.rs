@@ -1,7 +1,5 @@
 mod edit;
 mod health;
-mod replace;
-mod selection;
 
 use crate::error::{PatchwiseError, Result};
 use crate::nvim::notify;
@@ -21,8 +19,6 @@ type Handler = fn(CommandArgs) -> Result<()>;
 #[derive(Debug, Clone, Copy, EnumIter)]
 enum Command {
     Health,
-    Selection,
-    Replace,
     Edit,
 }
 
@@ -30,8 +26,6 @@ impl Command {
     const fn name(self) -> &'static str {
         match self {
             Self::Health => "PatchwiseHealth",
-            Self::Selection => "PatchwiseSelection",
-            Self::Replace => "PatchwiseReplace",
             Self::Edit => "PatchwiseEdit",
         }
     }
@@ -39,8 +33,6 @@ impl Command {
     const fn handler(self) -> Handler {
         match self {
             Self::Health => health::run,
-            Self::Selection => selection::run,
-            Self::Replace => replace::run,
             Self::Edit => edit::run,
         }
     }
@@ -48,9 +40,6 @@ impl Command {
     fn options(self) -> CreateCommandOpts {
         match self {
             Self::Health => CreateCommandOpts::default(),
-            Self::Selection | Self::Replace => CreateCommandOpts::builder()
-                .range(CommandRange::CurrentLine)
-                .build(),
             Self::Edit => CreateCommandOpts::builder()
                 .nargs(api::types::CommandNArgs::OneOrMore)
                 .range(CommandRange::CurrentLine)

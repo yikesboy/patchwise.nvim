@@ -16,11 +16,12 @@ pub struct CodexProvider;
 
 impl Provider for CodexProvider {
     fn health(&self) -> Result<()> {
-        check_available_on_path()?;
-        check_is_authenticated()
+        ensure_available_on_path()?;
+        ensure_is_authenticated()
     }
 
     fn generate(&self, prompt: &Prompt) -> Result<String> {
+        ensure_is_authenticated()?;
         let command = build_command();
         let prompt_bytes = prompt.as_str().to_owned().into_bytes();
         let response = run_with_stdin(PROVIDER_NAME, command, prompt_bytes)?;
@@ -72,7 +73,7 @@ fn strip_md_code_block(response: &str) -> &str {
         .unwrap_or(response)
 }
 
-fn check_available_on_path() -> Result<()> {
+fn ensure_available_on_path() -> Result<()> {
     let status = Command::new(EXECUTABLE)
         .arg(VERSION_ARG)
         .stdin(Stdio::null())
@@ -96,7 +97,7 @@ fn check_available_on_path() -> Result<()> {
     Ok(())
 }
 
-fn check_is_authenticated() -> Result<()> {
+fn ensure_is_authenticated() -> Result<()> {
     let output = Command::new(EXECUTABLE)
         .args([LOGIN_ARG, STATUS_ARG])
         .stdin(Stdio::null())

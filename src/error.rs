@@ -115,6 +115,9 @@ pub enum PatchwiseError {
 
     #[error("Selected text changed while generating. Edit not applied.")]
     SelectionChanged,
+
+    #[error("Failed to track the selected text")]
+    SelectionTracking(#[source] nvim_oxi::api::Error),
 }
 
 pub type Result<T> = std::result::Result<T, PatchwiseError>;

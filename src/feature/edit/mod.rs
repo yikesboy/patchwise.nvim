@@ -1,13 +1,12 @@
+mod pending_edit;
 use std::path::PathBuf;
-
-use crate::error::Result;
-use crate::prompt;
 
 use crate::{
     background,
-    error::PatchwiseError,
+    error::Result,
+    feature::edit::pending_edit::PendingEdit,
     nvim::{buffer::PatchwiseBuffer, notify, selection::Selection},
-    provider,
+    prompt, provider,
 };
 
 type GenerationResult = std::result::Result<String, String>;
@@ -21,14 +20,8 @@ pub struct EditRequest {
     pub file_type: String,
 }
 
-#[derive(Debug)]
-struct PendingEdit {
-    buffer_handle: i32,
-    selection: Selection,
-}
-
 pub fn start(instruction: &str) -> Result<()> {
-    let buffer = PatchwiseBuffer::current();
+    let mut buffer = PatchwiseBuffer::current();
     let selection = Selection::current(&buffer)?;
 
     let request = EditRequest {
@@ -40,11 +33,7 @@ pub fn start(instruction: &str) -> Result<()> {
     };
 
     let prompt = prompt::edit::build(&request);
-
-    let pending_edit = PendingEdit {
-        buffer_handle: buffer.handle(),
-        selection,
-    };
+    let pending_edit = PendingEdit::create(&mut buffer, &selection)?;
 
     background::run(
         move || provider::generate(&prompt).map_err(|error| error.to_string()),
@@ -59,32 +48,9 @@ pub fn start(instruction: &str) -> Result<()> {
 }
 
 fn finish(pending_edit: PendingEdit, generation: GenerationResult) {
-    let result = generation
-        .map_err(PatchwiseError::BackgroundProvider)
-        .and_then(|replacement| pending_edit.apply(&replacement));
-
+    let result = pending_edit.complete(generation);
     match result {
         Ok(()) => notify::info("Patchwise: edit applied"),
         Err(error) => notify::error(&format!("PatchwiseEdit: {error}")),
-    }
-}
-
-impl PendingEdit {
-    fn apply(self, replacement: &str) -> Result<()> {
-        let mut buffer = PatchwiseBuffer::from_handle(self.buffer_handle);
-
-        if !buffer.is_valid() {
-            return Err(PatchwiseError::BufferUnavailable {
-                buffer: self.buffer_handle,
-            });
-        }
-
-        let current_selection = buffer.read(self.selection.range)?;
-
-        if current_selection != self.selection.text {
-            return Err(PatchwiseError::SelectionChanged);
-        }
-
-        buffer.replace(self.selection.range, replacement)
     }
 }

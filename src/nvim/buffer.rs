@@ -3,9 +3,11 @@ use std::path::PathBuf;
 use nvim_oxi::api;
 use nvim_oxi::api::Buffer;
 use nvim_oxi::api::opts::OptionOpts;
+use nvim_oxi::api::opts::SetExtmarkOpts;
 
 use crate::error::PatchwiseError;
 use crate::error::Result;
+use crate::nvim::selection::BufferPosition;
 use nvim_oxi as oxi;
 
 use crate::nvim::selection::TextRange;
@@ -100,5 +102,35 @@ impl PatchwiseBuffer {
     pub fn file_type(&self) -> Result<String> {
         let opts = OptionOpts::builder().buffer(self.inner.clone()).build();
         api::get_option_value("filetype", &opts).map_err(PatchwiseError::BufferRead)
+    }
+
+    pub fn create_extmark(
+        &mut self,
+        namespace: u32,
+        position: BufferPosition,
+        right_gravity: bool,
+    ) -> Result<u32> {
+        let opts = SetExtmarkOpts::builder()
+            .right_gravity(right_gravity)
+            .build();
+
+        self.inner
+            .set_extmark(namespace, position.row, position.col, &opts)
+            .map_err(PatchwiseError::SelectionTracking)
+    }
+
+    pub fn extmark_position(&self, namespace: u32, extmark: u32) -> Result<BufferPosition> {
+        let (row, col, _) = self
+            .inner
+            .get_extmark_by_id(namespace, extmark, &Default::default())
+            .map_err(PatchwiseError::SelectionTracking)?;
+
+        Ok(BufferPosition { row, col })
+    }
+
+    pub fn delete_extmark(&mut self, namespace: u32, extmark: u32) -> Result<()> {
+        self.inner
+            .del_extmark(namespace, extmark)
+            .map_err(PatchwiseError::SelectionTracking)
     }
 }

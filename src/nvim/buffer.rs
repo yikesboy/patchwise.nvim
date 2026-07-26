@@ -119,6 +119,45 @@ impl PatchwiseBuffer {
             .map_err(PatchwiseError::SelectionTracking)
     }
 
+    pub fn create_highlighted_range(
+        &mut self,
+        namespace: u32,
+        range: TextRange,
+        highlight: &str,
+    ) -> Result<u32> {
+        let opts = SetExtmarkOpts::builder()
+            .end_row(range.end.row)
+            .end_col(range.end.col)
+            .right_gravity(false)
+            .end_right_gravity(true)
+            .hl_group(highlight)
+            .priority(180)
+            .build();
+
+        self.inner
+            .set_extmark(namespace, range.start.row, range.start.col, &opts)
+            .map_err(PatchwiseError::SelectionTracking)
+    }
+
+    pub fn create_line_sign(
+        &mut self,
+        namespace: u32,
+        row: usize,
+        text: &str,
+        highlight: &str,
+    ) -> Result<u32> {
+        let opts = SetExtmarkOpts::builder()
+            .sign_text(text)
+            .sign_hl_group(highlight)
+            .right_gravity(false)
+            .priority(190)
+            .build();
+
+        self.inner
+            .set_extmark(namespace, row, 0, &opts)
+            .map_err(PatchwiseError::SelectionTracking)
+    }
+
     pub fn extmark_position(&self, namespace: u32, extmark: u32) -> Result<BufferPosition> {
         let (row, col, _) = self
             .inner

@@ -66,7 +66,10 @@ impl PendingEdit {
     pub fn complete(self, generation: GenerationResult) -> Result<()> {
         let operation = generation
             .map_err(PatchwiseError::BackgroundProvider)
-            .and_then(|replacement| self.apply(&replacement));
+            .and_then(|replacement| {
+                let replacement = strip_md_code_block(&replacement);
+                self.apply(&replacement)
+            });
         let cleanup = self.clear();
 
         operation.and(cleanup)
@@ -156,6 +159,22 @@ fn create_signs(
     }
 
     Ok(signs)
+}
+
+fn strip_md_code_block(response: &str) -> &str {
+    if !response.starts_with("```") {
+        return response;
+    }
+
+    let Some(body_start) = response.find('\n') else {
+        return response;
+    };
+
+    let body = &response[body_start + 1..];
+
+    body.strip_suffix("```")
+        .map(str::trim_end)
+        .unwrap_or(response)
 }
 
 fn namespace() -> u32 {

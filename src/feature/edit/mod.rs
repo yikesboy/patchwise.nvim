@@ -6,7 +6,8 @@ use crate::{
     error::Result,
     feature::edit::pending_edit::PendingEdit,
     nvim::{buffer::PatchwiseBuffer, notify, selection::Selection},
-    prompt, provider,
+    prompt,
+    provider::{self, ProviderRequest},
 };
 
 type GenerationResult = std::result::Result<String, String>;
@@ -34,9 +35,13 @@ pub fn start(instruction: &str) -> Result<()> {
 
     let prompt = prompt::edit::build(&request);
     let pending_edit = PendingEdit::create(&mut buffer, &selection)?;
+    let provider_request = ProviderRequest {
+        prompt,
+        working_directory: None,
+    };
 
     background::run(
-        move || provider::generate(&prompt).map_err(|error| error.to_string()),
+        move || provider::generate(&provider_request).map_err(|error| error.to_string()),
         move |result| {
             finish(pending_edit, result);
         },

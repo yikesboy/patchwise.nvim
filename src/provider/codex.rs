@@ -2,8 +2,8 @@ use std::process::{Command, Stdio};
 
 use crate::error::PatchwiseError;
 use crate::error::Result;
-use crate::prompt::Prompt;
 use crate::provider::Provider;
+use crate::provider::ProviderRequest;
 use crate::provider::process::run_with_stdin;
 
 const PROVIDER_NAME: &str = "Codex";
@@ -20,10 +20,15 @@ impl Provider for CodexProvider {
         ensure_is_authenticated()
     }
 
-    fn generate(&self, prompt: &Prompt) -> Result<String> {
+    fn generate(&self, request: &ProviderRequest) -> Result<String> {
         ensure_is_authenticated()?;
-        let command = build_command();
-        let prompt_bytes = prompt.as_str().to_owned().into_bytes();
+        let mut command = build_command();
+
+        if let Some(directory) = &request.working_directory {
+            command.current_dir(directory);
+        }
+
+        let prompt_bytes = request.prompt.as_str().to_owned().into_bytes();
         let response = run_with_stdin(PROVIDER_NAME, command, prompt_bytes)?;
         normalize_response(&response)
     }
@@ -52,25 +57,7 @@ fn normalize_response(response: &str) -> Result<String> {
         });
     }
 
-    let cleaned_response = strip_md_code_block(response).to_owned();
-
-    Ok(cleaned_response)
-}
-
-fn strip_md_code_block(response: &str) -> &str {
-    if !response.starts_with("```") {
-        return response;
-    }
-
-    let Some(body_start) = response.find('\n') else {
-        return response;
-    };
-
-    let body = &response[body_start + 1..];
-
-    body.strip_suffix("```")
-        .map(str::trim_end)
-        .unwrap_or(response)
+    Ok(response.to_owned())
 }
 
 fn ensure_available_on_path() -> Result<()> {

@@ -8,6 +8,9 @@ use crate::nvim::{buffer::PatchwiseBuffer, selection::Selection};
 const NAMESPACE_NAME: &str = "patchwise.edit.tracking";
 const START_RIGHT_GRAVITY: bool = true;
 const END_RIGHT_GRAVITY: bool = true;
+const PENDING_SIGN_TEXT: &str = "|";
+const PENDING_HIGHLIGHT: &str = "DiffChange";
+const PENDING_SIGN_HIGHLIGHT: &str = "WarningMsg";
 
 static NAMESPACE: OnceLock<u32> = OnceLock::new();
 
@@ -16,6 +19,8 @@ pub struct PendingEdit {
     namespace: u32,
     start_extmark: u32,
     end_extmark: u32,
+    highlight_extmark: u32,
+    sign_extmarks: Vec<u32>,
     original_text: String,
 }
 
@@ -37,11 +42,23 @@ impl PendingEdit {
             }
         };
 
+        let decoration_result = create_decorations(buffer, namespace, selection.range);
+        let (highlight_extmark, sign_extmarks) = match decoration_result {
+            Ok(decorations) => decorations,
+            Err(error) => {
+                let _ = buffer.delete_extmark(namespace, start_extmark);
+                let _ = buffer.delete_extmark(namespace, end_extmark);
+                return Err(error);
+            }
+        };
+
         Ok(Self {
             buffer_handle: buffer.handle(),
             namespace,
             start_extmark,
             end_extmark,
+            highlight_extmark,
+            sign_extmarks,
             original_text: selection.text.clone(),
         })
     }
@@ -86,9 +103,64 @@ impl PendingEdit {
 
         let start_result = buffer.delete_extmark(self.namespace, self.start_extmark);
         let end_result = buffer.delete_extmark(self.namespace, self.end_extmark);
+        let mut result = start_result.and(end_result);
 
-        start_result.and(end_result)
+        result = result.and(buffer.delete_extmark(self.namespace, self.highlight_extmark));
+        for sign_extmark in self.sign_extmarks.iter().copied() {
+            result = result.and(buffer.delete_extmark(self.namespace, sign_extmark));
+        }
+
+        result
     }
+}
+
+fn create_decorations(
+    buffer: &mut PatchwiseBuffer,
+    namespace: u32,
+    range: TextRange,
+) -> Result<(u32, Vec<u32>)> {
+    let highlight_extmark =
+        buffer.create_highlighted_range(namespace, range, super::PENDING_HIGHLIGHT)?;
+
+    let sign_extmarks_result = create_signs(buffer, namespace, range);
+    let sign_extmarks = match sign_extmarks_result {
+        Ok(sign_extmarks) => sign_extmarks,
+        Err(error) => {
+            let _ = buffer.delete_extmark(namespace, highlight_extmark);
+            return Err(error);
+        }
+    };
+
+    Ok((highlight_extmark, sign_extmarks))
+}
+
+fn create_signs(
+    buffer: &mut PatchwiseBuffer,
+    namespace: u32,
+    range: TextRange,
+) -> Result<Vec<u32>> {
+    let mut signs = Vec::new();
+
+    for row in range.start.row..=range.end.row {
+        let sign_result = buffer.create_line_sign(
+            namespace,
+            row,
+            PENDING_SIGN_TEXT,
+            super::PENDING_SIGN_HIGHLIGHT,
+        );
+        let sign = match sign_result {
+            Ok(sign) => sign,
+            Err(error) => {
+                for sign in signs {
+                    let _ = buffer.delete_extmark(namespace, sign);
+                }
+                return Err(error);
+            }
+        };
+        signs.push(sign);
+    }
+
+    Ok(signs)
 }
 
 fn namespace() -> u32 {

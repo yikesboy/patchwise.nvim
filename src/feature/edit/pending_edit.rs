@@ -119,8 +119,7 @@ fn create_decorations(
     namespace: u32,
     range: TextRange,
 ) -> Result<(u32, Vec<u32>)> {
-    let highlight_extmark =
-        buffer.create_highlighted_range(namespace, range, super::PENDING_HIGHLIGHT)?;
+    let highlight_extmark = buffer.create_highlighted_range(namespace, range, PENDING_HIGHLIGHT)?;
 
     let sign_extmarks_result = create_signs(buffer, namespace, range);
     let sign_extmarks = match sign_extmarks_result {
@@ -142,12 +141,8 @@ fn create_signs(
     let mut signs = Vec::new();
 
     for row in range.start.row..=range.end.row {
-        let sign_result = buffer.create_line_sign(
-            namespace,
-            row,
-            PENDING_SIGN_TEXT,
-            super::PENDING_SIGN_HIGHLIGHT,
-        );
+        let sign_result =
+            buffer.create_line_sign(namespace, row, PENDING_SIGN_TEXT, PENDING_SIGN_HIGHLIGHT);
         let sign = match sign_result {
             Ok(sign) => sign,
             Err(error) => {
